@@ -22,7 +22,7 @@ static LocationMap s_uniforms;
 static LocationMap s_attributes;
 
 GLuint GetUniformLocation(GLuint programId, const char * name) {
-    auto uniforms = s_uniforms[programId];
+    std::map<std::string, GLuint> & uniforms = s_uniforms[programId];
     if (uniforms.find(name) == uniforms.end()) {
         GLuint slot = glGetUniformLocation(programId, name);
         uniforms[name] = slot;
@@ -33,7 +33,7 @@ GLuint GetUniformLocation(GLuint programId, const char * name) {
 }
 
 GLuint GetAttributeLocation(GLuint programId, const char * name) {
-    auto attrs = s_attributes[programId];
+    std::map<std::string, GLuint> & attrs = s_attributes[programId];
     if (attrs.find(name) == attrs.end()) {
         GLuint slot = glGetAttribLocation(programId, name);
         attrs[name] = slot;

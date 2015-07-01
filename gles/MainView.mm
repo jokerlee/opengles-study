@@ -461,9 +461,8 @@ std::map<std::string, int> s_textures;
             break;
         case UIGestureRecognizerStateChanged: {
             CGPoint offset = [gesture translationInView:self];
-            NSLog(@"%.2f, %.2f, %f, %f", offset.x, offset.y, self.contentScaleFactor, self.frame.size.width);
             _cubeOffset.x = moveStart.x + offset.x / self.frame.size.width * 2;
-            _cubeOffset.y = moveStart.y - offset.y / self.frame.size.height * 2;
+            _cubeOffset.y = moveStart.y - offset.y / self.frame.size.height * 6;
             break;
         }
         default:
