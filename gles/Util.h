@@ -12,12 +12,16 @@
 #import <OpenGLES/ES2/gl.h>
 #import <OpenGLES/ES2/glext.h>
 
+#include <math.h>
+
 #define RED     {1.0f, 0.0f, 0.0f, 1.0f}
 #define GREEN   {0.0f, 1.0f, 0.0f, 1.0f}
 #define BLUE    {0.0f, 0.0f, 1.0f, 1.0f}
 #define YELLOW  {1.0f, 1.0f, 0.0f, 1.0f}
 #define BLACK   {0.0f, 0.0f, 0.0f, 1.0f}
 #define WHITE   {1.0f, 1.0f, 1.0f, 1.0f}
+
+#define RADIAN_TO_DEGREE(r) ((r) * 180.0F / M_PI)
 
 #define FREE_BUFFER(buffer, type) if (buffer) { glDelete##type##buffers(1, &buffer); buffer = 0; }
 #define CREATE_VBO(type, data) CreateVBO(type, (GLvoid *)data, sizeof(data))
@@ -29,7 +33,6 @@
             printf("OpenGL error 0x%04X in %s %s %d\n", __error, __FILE__, __FUNCTION__, __LINE__); \
         } \
     } while (false)
-
 
 GLuint GetUniformLocation(GLuint programId, const char * name);
 GLuint GetAttributeLocation(GLuint programId, const char * name);

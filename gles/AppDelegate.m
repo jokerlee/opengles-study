@@ -27,8 +27,11 @@
     [self.window makeKeyAndVisible];
     
     RootViewController * rootViewController = [[RootViewController alloc] init];
+    rootViewController.view = self.glView;
     self.window.rootViewController = rootViewController;
     
+    [[UIApplication sharedApplication] setIdleTimerDisabled:YES];
+
     return YES;
 }
 

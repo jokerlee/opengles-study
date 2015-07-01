@@ -27,4 +27,9 @@
 
 @implementation RootViewController
 
+- (BOOL)prefersStatusBarHidden
+{
+    return YES;
+}
+
 @end

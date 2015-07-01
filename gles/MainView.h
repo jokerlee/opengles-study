@@ -11,7 +11,9 @@
 #include <OpenGLES/ES2/gl.h>
 #include <OpenGLES/ES2/glext.h>
 
-@interface MainView: UIView {
+#include "ksVector.h"
+
+@interface MainView: UIView<UIGestureRecognizerDelegate> {
     CAEAGLLayer * _eaglLayer;
     EAGLContext * _context;
     GLuint _renderbuffer;
@@ -22,17 +24,27 @@
     Boolean _enableMultiSampling;
     CADisplayLink * _displayLink;
     int _frameCount;
+    CGPoint _cubeOffset;
+    float _cubeScale;
+    float _cubeRotation;
 }
 
-- (void) setupBuffers;
-- (void) destroyBuffers;
-- (GLuint) setupProgram:(NSString *)name;
-- (GLuint) setupTexture:(const char *)name;
-- (void) render;
-- (void) renderTriangles;
-- (void) renderTexture;
-- (void) renderCube;
-- (void) setupProjection:(GLuint)programId;
-- (void) updateCubeTransform:(GLuint)programId;
-- (void) displayLinkCallback:(CADisplayLink*)displayLink;
+- (void)setupBuffers;
+- (void)destroyBuffers;
+- (GLuint)setupProgram:(NSString *)name;
+- (GLuint)setupTexture:(const char *)name;
+
+- (void)render;
+- (void)renderTriangles;
+- (void)renderTexture;
+- (void)renderCube;
+
+- (void)setupProjection:(GLuint)programId;
+- (void)updateCubeTransform:(GLuint)programId;
+- (void)displayLinkCallback:(CADisplayLink*)displayLink;
+
+- (void)onScale:(UIPinchGestureRecognizer *)pinchGesture;
+- (void)onRotate:(UIRotationGestureRecognizer *)rotateGesture;
+- (void)onMove:(UIPanGestureRecognizer *)panGesture;
+
 @end

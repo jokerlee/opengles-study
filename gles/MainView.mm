@@ -13,6 +13,7 @@
 #include <map>
 #include <string>
 
+#define IOS_MAX_TOUCHES_COUNT   10
 
 @implementation MainView
 
@@ -31,8 +32,21 @@
     _depthbuffer = 0;
     _msaaFramebuffer = 0;
     _msaaRenderbuffer = 0;
-    
     _enableMultiSampling = true;
+    _cubeOffset = {0.0, 0.0};
+    _cubeScale = 1.0;
+    _cubeRotation = 0.0;
+    
+    auto * pinchGesture = [[UIPinchGestureRecognizer alloc]initWithTarget:self action:@selector(onScale:)];
+    [self addGestureRecognizer:pinchGesture];
+    auto * rotateGesture = [[UIRotationGestureRecognizer alloc] initWithTarget:self action:@selector(onRotate:)];
+    [self addGestureRecognizer:rotateGesture];
+    auto * panRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(onMove:)];
+    [panRecognizer setMinimumNumberOfTouches:1];
+    [panRecognizer setMaximumNumberOfTouches:1];
+    [self addGestureRecognizer:panRecognizer];
+    
+    
     _eaglLayer = (CAEAGLLayer*) self.layer;
     _eaglLayer.opaque = YES;
     _eaglLayer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
@@ -65,8 +79,9 @@
     return self;
 }
 
+
 std::map<std::string, int> s_programs;
-- (GLuint) setupProgram:(NSString *)name
+- (GLuint)setupProgram:(NSString *)name
 {
     std::string key = [name UTF8String];
     GLuint programId;
@@ -143,7 +158,7 @@ std::map<std::string, int> s_programs;
 }
 
 std::map<std::string, int> s_textures;
-- (GLuint) setupTexture:(const char *)name
+- (GLuint)setupTexture:(const char *)name
 {
     GLuint textureId;
     if (s_textures.find(name) == s_textures.end()) {
@@ -186,7 +201,7 @@ std::map<std::string, int> s_textures;
     [self render];
 }
 
-- (void) displayLinkCallback:(CADisplayLink*)displayLink
+- (void)displayLinkCallback:(CADisplayLink*)displayLink
 {
     [EAGLContext setCurrentContext: _context];
     [self render];
@@ -305,7 +320,7 @@ std::map<std::string, int> s_textures;
 }
 
 
-- (void) setupProjection: (GLuint)programId
+- (void)setupProjection:(GLuint)programId
 {
     // Generate a perspective matrix with a 60 degree FOV
     float aspect = self.frame.size.width / self.frame.size.height;
@@ -318,17 +333,19 @@ std::map<std::string, int> s_textures;
     glUniformMatrix4fv(uProjection, 1, GL_FALSE, (GLfloat*)&projectionMatrix.m[0][0]);
 }
 
-- (void) updateCubeTransform: (GLuint)programId
+- (void)updateCubeTransform:(GLuint)programId
 {
     ksMatrix4 modelViewMatrix;
     ksMatrixLoadIdentity(&modelViewMatrix);
-    ksMatrixTranslate(&modelViewMatrix, 0.0, -1, -5.5);
-    ksMatrixRotate(&modelViewMatrix, _frameCount, 0.5, 0.5, 0.5);
+    ksMatrixTranslate(&modelViewMatrix, _cubeOffset.x, _cubeOffset.y, -5.5);
+    ksMatrixScale(&modelViewMatrix, _cubeScale, _cubeScale, _cubeScale);
+    ksMatrixRotate(&modelViewMatrix, _cubeRotation, 0.0, 0.0, 1.0);
+    ksMatrixRotate(&modelViewMatrix, _frameCount, 1.0, 0.0, 0.0);
     GLuint uModelView = GetUniformLocation(programId, "u_modelView");
     glUniformMatrix4fv(uModelView, 1, GL_FALSE, (GLfloat*) &modelViewMatrix.m[0][0]);
 }
 
-- (void) renderCube
+- (void)renderCube
 {
     struct Vertex {
         float Position[3];
@@ -337,23 +354,23 @@ std::map<std::string, int> s_textures;
 
     Vertex data[] = {
         // Front
-        {{ 1.0f, -1.0f,  0.0f},   RED}, {{ 1.0,  1.0,  0.0},   RED},
-        {{-1.0f,  1.0f,  0.0f},   RED}, {{-1.0, -1.0,  0.0},   RED},
+        {{ 1.0f, -1.0f,  1.0f},   RED}, {{ 1.0,  1.0,  1.0},   RED},
+        {{-1.0f,  1.0f,  1.0f},   RED}, {{-1.0, -1.0,  1.0},   RED},
         // Back
-        {{ 1.0f, -1.0f, -2.0f},  BLUE}, {{ 1.0,  1.0, -2.0},  BLUE},
-        {{-1.0f,  1.0f, -2.0f},  BLUE}, {{-1.0, -1.0, -2.0},  BLUE},
+        {{ 1.0f, -1.0f, -1.0f},  BLUE}, {{ 1.0,  1.0, -1.0},  BLUE},
+        {{-1.0f,  1.0f, -1.0f},  BLUE}, {{-1.0, -1.0, -1.0},  BLUE},
         // Left
-        {{-1.0f, -1.0f,  0.0f}, GREEN}, {{-1.0,  1.0,  0.0}, GREEN},
-        {{-1.0f,  1.0f, -2.0f}, GREEN}, {{-1.0, -1.0, -2.0}, GREEN},
+        {{-1.0f, -1.0f,  1.0f}, GREEN}, {{-1.0,  1.0,  1.0}, GREEN},
+        {{-1.0f,  1.0f, -1.0f}, GREEN}, {{-1.0, -1.0, -1.0}, GREEN},
         // Right
-        {{ 1.0f, -1.0f, -2.0f}, BLACK}, {{ 1.0,  1.0, -2.0}, BLACK},
-        {{ 1.0f,  1.0f,  0.0f}, BLACK}, {{ 1.0, -1.0,  0.0}, BLACK},
+        {{ 1.0f, -1.0f, -1.0f}, BLACK}, {{ 1.0,  1.0, -1.0}, BLACK},
+        {{ 1.0f,  1.0f,  1.0f}, BLACK}, {{ 1.0, -1.0,  1.0}, BLACK},
         // Top
-        {{ 1.0f,  1.0f,  0.0f},YELLOW}, {{ 1.0,  1.0, -2.0},YELLOW},
-        {{-1.0f,  1.0f, -2.0f},YELLOW}, {{-1.0,  1.0,  0.0},YELLOW},
+        {{ 1.0f,  1.0f,  1.0f},YELLOW}, {{ 1.0,  1.0, -1.0},YELLOW},
+        {{-1.0f,  1.0f, -1.0f},YELLOW}, {{-1.0,  1.0,  1.0},YELLOW},
         // Bottom
-        {{-1.0f, -1.0f, -2.0f}, WHITE}, {{-1.0, -1.0,  0.0}, WHITE},
-        {{ 1.0f, -1.0f,  0.0f}, WHITE}, {{ 1.0, -1.0, -2.0}, WHITE}
+        {{-1.0f, -1.0f, -1.0f}, WHITE}, {{-1.0, -1.0,  1.0}, WHITE},
+        {{ 1.0f, -1.0f,  1.0f}, WHITE}, {{ 1.0, -1.0, -1.0}, WHITE}
     };
     
     GLushort indices[] = {
@@ -391,6 +408,63 @@ std::map<std::string, int> s_textures;
     glBindVertexArrayOES(vaoId);
     glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, (GLvoid*)0);
     glBindVertexArrayOES(0);
+}
+
+
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
+{
+    otherGestureRecognizer.enabled = NO;
+    return YES;
+}
+
+- (void)onScale:(UIPinchGestureRecognizer *)gesture
+{
+    static float scaleStart = 1.0f;
+    switch (gesture.state) {
+        case UIGestureRecognizerStateBegan:
+            scaleStart = _cubeScale;
+            break;
+        case UIGestureRecognizerStateChanged:
+            _cubeScale = scaleStart * gesture.scale;
+            break;
+        default:
+            break;
+    }
+}
+
+- (void)onRotate:(UIRotationGestureRecognizer *)gesture
+{
+    static float rotationStart = 0.0f;
+    switch (gesture.state) {
+        case UIGestureRecognizerStateBegan:
+            rotationStart = _cubeRotation;
+            break;
+        case UIGestureRecognizerStateChanged:
+            _cubeRotation = rotationStart + RADIAN_TO_DEGREE(gesture.rotation);
+            break;
+        default:
+            break;
+    }
+}
+
+- (void)onMove:(UIPanGestureRecognizer *)gesture
+{
+    static CGPoint moveStart;
+    switch (gesture.state) {
+        case UIGestureRecognizerStateBegan:
+            moveStart = _cubeOffset;
+            break;
+        case UIGestureRecognizerStateChanged: {
+            CGPoint offset = [gesture translationInView:self];
+            NSLog(@"%.2f, %.2f, %f, %f", offset.x, offset.y, self.contentScaleFactor, self.frame.size.width);
+            _cubeOffset.x = moveStart.x + offset.x / self.frame.size.width * 2;
+            _cubeOffset.y = moveStart.y - offset.y / self.frame.size.height * 2;
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 @end
