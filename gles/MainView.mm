@@ -37,13 +37,18 @@
     _cubeScale = 1.0;
     _cubeRotation = 0.0;
     
-    auto * pinchGesture = [[UIPinchGestureRecognizer alloc]initWithTarget:self action:@selector(onScale:)];
-    [self addGestureRecognizer:pinchGesture];
-    auto * rotateGesture = [[UIRotationGestureRecognizer alloc] initWithTarget:self action:@selector(onRotate:)];
-    [self addGestureRecognizer:rotateGesture];
+    auto * pinchRecognizer = [[UIPinchGestureRecognizer alloc]initWithTarget:self action:@selector(onScale:)];
+    [pinchRecognizer setDelegate:self];
+    [self addGestureRecognizer:pinchRecognizer];
+
+    auto * rotateRecognizer = [[UIRotationGestureRecognizer alloc] initWithTarget:self action:@selector(onRotate:)];
+    [rotateRecognizer setDelegate:self];
+    [self addGestureRecognizer:rotateRecognizer];
+    
     auto * panRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(onMove:)];
     [panRecognizer setMinimumNumberOfTouches:1];
     [panRecognizer setMaximumNumberOfTouches:1];
+    [panRecognizer setDelegate:self];
     [self addGestureRecognizer:panRecognizer];
     
     
@@ -414,7 +419,6 @@ std::map<std::string, int> s_textures;
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
 {
-    otherGestureRecognizer.enabled = NO;
     return YES;
 }
 
